@@ -26,7 +26,7 @@ FPS=15 #Hqcamera limit
 SUB=320
 ZOOM=4
 RECORD_RESOLUTION=(960,540) #録画フォーマットに合わせた解像度が必要　H264
-
+log=0
 
 #camera = PiCamera()
 
@@ -99,6 +99,7 @@ class GuiCamera(tk.Frame):
         global main#画面更新の際に画像のデータがgrobalでないと失敗するので用意
         global sub
         global forcus
+        global log
         
         if self.record_now:
             output = np.empty(((self.WIDE_HEIGHT), (WIDTH),3), dtype=np.uint8)#画像格納用のndarrayを用意　幅が32高さが16の倍数である必要がある
@@ -129,12 +130,16 @@ class GuiCamera(tk.Frame):
          
         if self.record_now:#録画中はリソース節約
             pass
-        else:    
+        else:
+            gray = cv2.cvtColor(forcus, cv2.COLOR_BGR2GRAY)
             laplacian = cv2.Laplacian(gray, cv2.CV_64F)#グレースケール化
-            log10=math.log10(laplacian.var())#特徴量を取得し対数で管理
-            self.indicator.create_rectangle(0,0,320,40,
+            log=log*0.6+0.4*math.log(laplacian.var(),4)#特徴量を取得し対数で管理 
+            if log<0 or log>SUB:
+                pass
+            else:
+                self.indicator.create_rectangle(0,0,SUB,40,
                                         width=10,fill="black")#バーグラフの背景
-            self.indicator.create_rectangle(0,0,320*log10//6,40,
+                self.indicator.create_rectangle(0,0,SUB*log//6,40,
                                         width=10,fill="blue")#特徴量の増減でバーが伸び縮みする
         
         main=ImageTk.PhotoImage(image=output_p)#メイン画像
